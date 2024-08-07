@@ -25,20 +25,24 @@ app.get('/scrape-data', async (req, res) => {
     console.log(pageContent);
 
     // Take a screenshot for verification
-    await page.screenshot({path: "currency.png" });
+    // await page.screenshot({path: "currency.png" });
     
     // Extract data from the page
     const data = await page.evaluate(() => {
       const currencyElements = document.querySelectorAll('th'); 
 
-      const currencyList = [{"name": "Eurozone"}];
+      const currencyList = [];
 
       for (const currencyElement of currencyElements) {
-        const currencyLink = currencyElement.querySelector('a') && currencyElement.querySelector('div');
+        const currencyLink = currencyElement.querySelector('div');
+        const abbriviation = currencyElement.querySelector('.mod-cross-rates__currency-text'); //testing this line to get abbriviation 
         const currencyAbr = currencyLink ? currencyLink.innerText : '';
-        
+        const abbriv = abbriviation ? abbriviation.innerText : '';
+
         currencyList.push({
-          name: currencyAbr
+          name: currencyAbr,
+          abbriviation: abbriv
+
         });
       }
       return currencyList; //currencyList
