@@ -1,4 +1,3 @@
-
 const express = require('express');
 const puppeteer = require('puppeteer');
 const app = express();
@@ -6,64 +5,75 @@ const PORT = process.env.PORT || 3001;
 const cors = require('cors');
 
 app.use(cors());
+
+// Store scraped data and timestamp
+let cachedData = null;
+let cacheTimestamp = null;
+const CACHE_DURATION = 60 * 1000; // Cache data for 1 minute
+
 app.get('/scrape-data', async (req, res) => {
   try {
+    const now = Date.now();
+
+    // Check if cached data is still valid
+    if (cachedData && (now - cacheTimestamp < CACHE_DURATION)) {
+      console.log('Returning cached data');
+      return res.json(cachedData);
+    }
+
+    // Scrape new data
     const browser = await puppeteer.launch();
-
     const page = await browser.newPage();
-    
-    // Go to the target URL
-    await page.goto('https://markets.ft.com/data/currencies', 
-        { waitUntil: 'networkidle2' });// Ensure the page has fully loaded
-    
+    await page.goto('https://markets.ft.com/data/currencies', { waitUntil: 'networkidle2' });
 
-    // Wait for the table to appear
-       await page.waitForFunction(() => {
-    return document.querySelector('thead') && document.querySelector('th'); 
-}, { timeout: 60000 });
+    await page.waitForFunction(() => document.querySelector('thead') && document.querySelector('tbody') && document.querySelector('tr'), { timeout: 60000 });
 
-   // Log the HTML content of the page
-    const pageContent = await page.content();
-    // console.log(pageContent);
-
-    // Take a screenshot for verification
-    // await page.screenshot({path: "currency.png" });
-    
-    // Extract data from the page
     const data = await page.evaluate(() => {
-      const currencyElements = document.querySelectorAll('th'); 
-
+      const currencyElements = document.querySelectorAll('thead th');
       const currencyList = [];
 
-      for (const currencyElement of currencyElements) {
-        const currencyLink = currencyElement.querySelector('div');
-        const abbriviation = currencyElement.querySelector('.mod-cross-rates__currency-text'); //testing this line to get abbriviation 
-        const currencyAbr = currencyLink ? currencyLink.innerText : '';
-        const abbriv = abbriviation ? abbriviation.innerText : '';
+      // Iterate over each currency
+      for (let i = 0; i < currencyElements.length; i++) {
+        const currencyElement = currencyElements[i];
 
+        const currencyLink = currencyElement.querySelector('div');
+        const abbreviation = currencyElement.querySelector('.mod-cross-rates__currency-text');
+        const currencyAbr = currencyLink ? currencyLink.innerText : '';
+        const abbriv = abbreviation ? abbreviation.innerText : '';
+
+        // Adjust the index by subtracting 1 to correctly match the <th> with the corresponding <td>
+        const currencyConversionTd = document.querySelector(`tbody tr:nth-of-type(3) td:nth-of-type(${i + 1})`);
+        const conversionQuote = currencyConversionTd ? currencyConversionTd.innerText : '';
+
+        const conversionObject = {};
+        conversionObject[`conversion ${abbriv} to USD`] = conversionQuote;
+
+        // Push the result into the currency list
         currencyList.push({
           name: currencyAbr,
-          abbriviation: abbriv
-
+          abbreviation: abbriv,
+          conversions: conversionObject
         });
       }
-      return currencyList; //currencyList
+
+      return currencyList;
     });
 
-    console.log(data + "data acquired");
+    console.log(data);
+    await browser.close();
 
-        await browser.close();
-        
-    res.json(data); // Send the data as JSON response
-  }
-   catch (error) {
+    // Cache data and timestamp
+    cachedData = data;
+    cacheTimestamp = now;
+
+    console.log('Data scraped and cached');
+    res.json(data);
+  } catch (error) {
     console.error('Error scraping data:', error);
     res.status(500).json({ error: 'Failed to scrape data' });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}/scrape-data`);
 });
-
-

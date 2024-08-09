@@ -3,39 +3,39 @@
 // working puppeteer code that doesnt use express
 
 
-const puppeteer = require('puppeteer');
+// const puppeteer = require('puppeteer');
 
-(async () => {
-const browser = await puppeteer.launch(); 
+// (async () => {
+// const browser = await puppeteer.launch(); 
 
-const page = await browser.newPage();
+// const page = await browser.newPage();
 
-await page.goto("https://quotes.toscrape.com/")
+// await page.goto("https://quotes.toscrape.com/")
 
-const quotesScraper = await page.evaluate(() => {
-    console.log("scraper evaluation method running");
+// const quotesScraper = await page.evaluate(() => {
+//     console.log("scraper evaluation method running");
     
-    const quotes = document.querySelectorAll(".quote"); 
-    const quotesArray = [];
+//     const quotes = document.querySelectorAll(".quote"); 
+//     const quotesArray = [];
 
-    for (const quote of quotes) { 
-        const texts = quote.querySelector(".text").innerText; 
-        const author = quote.querySelector(".author").innerText;  
+//     for (const quote of quotes) { 
+//         const texts = quote.querySelector(".text").innerText; 
+//         const author = quote.querySelector(".author").innerText;  
 
-        quotesArray.push({
-            quote: texts,
-             author
-        });
+//         quotesArray.push({
+//             quote: texts,
+//              author
+//         });
 
-    }
-    return quotesArray;
-});
+//     }
+//     return quotesArray;
+// });
 
 
-console.log(quotesScraper);
+// console.log(quotesScraper);
 
-            await browser.close();
-})();
+//             await browser.close();
+// })();
 
 
 
@@ -124,48 +124,61 @@ console.log(quotesScraper);
 
 // currency code tested and working 
 
-// const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer');
 
-// (async () => {
-//   try {
-//     const browser = await puppeteer.launch({ headless: true });
-//     const page = await browser.newPage();
+(async () => {
+  try {
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
 
-//     // Go to the target URL
-//     await page.goto('https://markets.ft.com/data/currencies', { waitUntil: 'networkidle2' });
+    // Go to the target URL
+    await page.goto('https://markets.ft.com/data/currencies', { waitUntil: 'networkidle2' });
 
-//     // Wait for the table to appear
-//     await page.waitForFunction(() => {
-//         return document.querySelector('thead') && document.querySelector('tr');
-//       }, { timeout: 60000 });
+    // Wait for the table to appear
+    await page.waitForFunction(() => {
+        return document.querySelector('thead'),  document.querySelector('tbody') && document.querySelector('tr');
+      }, { timeout: 60000 });
 
-//     // Take a screenshot for verification
-//     await page.screenshot({ path: 'currency.png' });
+    // Take a screenshot for verification
+    // await page.screenshot({ path: 'currency.png' });
 
-//     // Extract data from the page
-//     const data = await page.evaluate(() => {
-//       const currencyElements = document.querySelectorAll('thead');
-//       const currencyList = [];
+    // Extract data from the page
+    const data = await page.evaluate(() => {
+      const currencyConversions = document.querySelectorAll('tbody tr:nth-of-type(3)');
+      const currencyElements = document.querySelectorAll('thead');
+      const currencyList = [];
 
-//       currencyElements.forEach(currencyElement => {
-//         const currencyLink = currencyElement.querySelector('tr');
-//         const currencyAbr = currencyLink ? currencyLink.innerText : '';
+      for (const currencyElement of currencyElements) {
+        const currencyLink = currencyElement.querySelector('div');
+        const abbreviation = currencyElement.querySelector('.mod-cross-rates__currency-text');
+        const currencyAbr = currencyLink ? currencyLink.innerText : '';
+        const abbriv = abbreviation ? abbreviation.innerText : '';
 
-//         currencyList.push({
-//           name: currencyAbr
-//         });
-//       });
+        for (const currencyConversion of currencyConversions) {
+        const conversion = currencyConversion.querySelector('a');
+        const conversionQuote = conversion ? conversion.innerText : '';
 
-//       return currencyList;
-//     });
+            currencyList.push({
+                name: currencyAbr, 
+                abbreviation: abbriv, 
+                conversion: conversionQuote
+            });
+            console.log(currencyList);
+        }
+      };
+      
+      return currencyList;
+    });
 
-//     console.log(data);
+    console.log(data);
 
-//     await browser.close();
-//   } catch (error) {
-//     console.error('Error scraping data:', error);
-//   }
-// })();
+    
+
+    await browser.close();
+  } catch (error) {
+    console.error('Error scraping data:', error);
+  }
+})();
 
 ////////////////////////////////////////////////////////////////////////    //////////////////////////////////////////////////////////////////////////
 
