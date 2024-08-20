@@ -19,7 +19,7 @@ app.get('/scrape-data', async (req, res) => {
     if (cachedData && (now - cacheTimestamp < CACHE_DURATION)) {
       console.log('Returning cached data');
       return res.json(cachedData);
-    }
+    } 
 
     // Scrape new data
     const browser = await puppeteer.launch();
@@ -28,7 +28,7 @@ app.get('/scrape-data', async (req, res) => {
 
     await page.waitForFunction(() => document.querySelector('thead') && document.querySelector('tbody') && document.querySelector('tr'), { timeout: 60000 });
 
-    const data = await page.evaluate(() => {
+    let data = await page.evaluate(() => {
       const currencyElements = document.querySelectorAll('thead th');
       const currencyList = [];
 
@@ -45,8 +45,8 @@ app.get('/scrape-data', async (req, res) => {
         const currencyConversionTd = document.querySelector(`tbody tr:nth-of-type(3) td:nth-of-type(${i + 1})`);
         const conversionQuote = currencyConversionTd ? currencyConversionTd.innerText : '';
 
-        const conversionObject = {};
-        conversionObject[`conversion ${abbriv} to USD`] = conversionQuote;
+        let conversionObject = {};
+        conversionObject = conversionQuote;
 
         // Push the result into the currency list
         currencyList.push({
@@ -58,6 +58,9 @@ app.get('/scrape-data', async (req, res) => {
 
       return currencyList;
     });
+
+     // Limit the data to the first 9 items
+        data = data.slice(1, 9);
 
     console.log(data);
     await browser.close();
