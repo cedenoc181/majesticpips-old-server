@@ -1,8 +1,12 @@
 {
-  "name": "mp-backend",
+  "name": "majesticpips-server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
+  "engines": {
+    "node": "14.x",
+    "npm": "6.14.7"
+},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
