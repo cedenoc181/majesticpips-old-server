@@ -4,7 +4,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const cors = require('cors');
 
-app.use(cors());
+app.use(cors(
+  //for frontend domain
+));
 
 // Store scraped data and timestamp
 let cachedData = null;
